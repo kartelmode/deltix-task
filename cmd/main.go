@@ -17,7 +17,7 @@ func GetPrice(currency string, delta float64) float64 {
 	if currency == "USD" {
 		return delta
 	}
-	return currencies[currency+"USD"]
+	return currencies[currency+"USD"] * delta
 }
 
 func main() {
