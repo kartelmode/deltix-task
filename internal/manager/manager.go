@@ -42,14 +42,13 @@ func Calculate(left, right int,
 	userData []*models.UserData,
 	pricing Pricing,
 	timeStampCount, delta int,
-	combiner Combiner,
-	shiftTimeStampId, shiftTime int64) {
+	combiner Combiner) {
 	defer wg.Done()
 	balances := make([]*models.GroupedBalance, timeStampCount)
 	startTimeStamp := GetStampId(userData[left], int64(delta))
 	for i := 0; i < timeStampCount; i++ {
 		balances[i] = models.MakeNewGroupBalance(pools.GetNewBalance())
-		balances[i].SetId(int64(i) + startTimeStamp - shiftTimeStampId)
+		balances[i].SetId(int64(i) + startTimeStamp)
 	}
 
 	for id := left; id < right; id++ {
@@ -64,8 +63,8 @@ func Calculate(left, right int,
 	}
 
 	for id, stampBalances := range balances {
-		timeStampId := int64(id) + startTimeStamp - shiftTimeStampId
-		stampBalances.UpdateLastAll((timeStampId+1)*int64(delta) - 1 + shiftTime)
+		timeStampId := int64(id) + startTimeStamp
+		stampBalances.UpdateLastAll((timeStampId+1)*int64(delta) + shift)
 	}
 
 	wgCombine.Add(1)
@@ -95,17 +94,18 @@ func (manager *Manager) Run(delta, timeStampCount, maxGoroutines int, combiner C
 	stampChan := make(chan []*models.GroupedBalance)
 	defer close(stampChan)
 
-	shiftStampId := GetStampId(manager.Data[0], int64(delta))
-	shiftTime := manager.Data[0].Timestamp
+	shift = manager.Data[0].Timestamp
 	manager.Converter.Update(manager.Data[0].Timestamp - 1)
 	for pointer < len(manager.Data) {
 		for wg.GetCount() == maxGoroutines {
 		}
 		right := GetNextStamp(pointer, delta, manager.Data, timeStampCount)
 		wg.Add(1)
+		//I know, that i can reuse old instance of converter to avoid often calling garbage cleaning
+		//But I have no time to fix it :D
 		restPricing := manager.Converter.CopyRestPricing()
 
-		go Calculate(pointer, right, wg, wgCombine, manager.Data, restPricing, timeStampCount, delta, combiner, shiftStampId, shiftTime)
+		go Calculate(pointer, right, wg, wgCombine, manager.Data, restPricing, timeStampCount, delta, combiner)
 
 		pointer = right
 		if pointer < len(manager.Data) {

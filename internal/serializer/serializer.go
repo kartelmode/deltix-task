@@ -8,7 +8,7 @@ import (
 )
 
 func UnmarshalMarket() []*models.Market {
-	in, err := os.Open("small/market_data.csv")
+	in, err := os.Open("market_data.csv")
 	if err != nil {
 		panic(err)
 	}
@@ -23,7 +23,7 @@ func UnmarshalMarket() []*models.Market {
 }
 
 func UnmarshalUserData() []*models.UserData {
-	in, err := os.Open("small/user_data.csv")
+	in, err := os.Open("user_data.csv")
 	if err != nil {
 		panic(err)
 	}

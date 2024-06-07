@@ -20,18 +20,14 @@ func MakePricing(market []*models.Market) *Pricing {
 }
 
 func (pricing Pricing) CopyRestPricing() manager.Pricing {
-	newMarket := make([]*models.Market, len(pricing.Market)-pricing.Pointer)
-	for i := 0; i < len(newMarket); i++ {
-		newMarket[i] = models.CopyMarket(pricing.Market[pricing.Pointer+i])
-	}
 	newCurrencies := map[string]float64{}
 	for key, value := range pricing.Currencies {
 		newCurrencies[key] = value
 	}
 	return &Pricing{
-		Pointer:    0,
+		Pointer:    pricing.Pointer,
 		Currencies: newCurrencies,
-		Market:     newMarket,
+		Market:     pricing.Market,
 	}
 }
 

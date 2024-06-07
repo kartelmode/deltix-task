@@ -1,0 +1,20 @@
+{
+	"1h": {
+		"answer_filename": "bars-1h.csv",
+		"delta": 3600,
+		"goroutines_count": 20,
+		"timestamps_per_goroutine": 500
+	},
+	"1d": {
+		"answer_filename": "bars-1d.csv",
+		"delta": 86400,
+		"goroutines_count": 20,
+		"timestamps_per_goroutine": 20
+	},
+	"30d": {
+		"answer_filename": "bars-30d.csv",
+		"delta": 2592000,
+		"goroutines_count": 20,
+		"timestamps_per_goroutine": 1
+	}
+}

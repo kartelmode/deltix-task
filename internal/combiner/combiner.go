@@ -15,6 +15,8 @@ type Combiner struct {
 	Mutex                *sync.Mutex
 }
 
+var shift int64 = 0
+
 var currentUserBalance []float64
 
 func SetEmptyBalances() {
@@ -23,11 +25,12 @@ func SetEmptyBalances() {
 	}
 }
 
-func MakeCombiner() *Combiner {
+func MakeCombiner(newShift int64) *Combiner {
 	combiner := &Combiner{}
 	combiner.GroupedStatByStampId = new(map[int]*map[string]*models.Balance)
 	*combiner.GroupedStatByStampId = make(map[int]*map[string]*models.Balance)
 	combiner.Mutex = new(sync.Mutex)
+	shift = newShift
 	return combiner
 }
 
@@ -42,7 +45,7 @@ func (combiner Combiner) AddBalances(stamps []*models.GroupedBalance, wg *sync.W
 }
 
 func GetStartTimeStamp(time, delta int64) int64 {
-	return (time / delta) * delta
+	return ((time-shift)/delta)*delta + shift
 }
 
 func UpdateBalance(userId string, id int, balance *models.Balance, wg *sync.WaitGroup, writer Writer, delta int64) {
