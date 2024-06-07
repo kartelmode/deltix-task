@@ -80,13 +80,11 @@ func (combiner *Combiner) Combine(writer Writer, delta int64) {
 	}
 	currentUserBalance = make([]float64, len(userIds))
 	SetEmptyBalances()
-	//map in go is a hash table :D
 	for stampId := 0; stampId <= maxTimeStamp; stampId++ {
-		for key, usersBalances := range *combiner.GroupedStatByStampId {
-			if key != stampId {
-				continue
-			}
-			UpdateBalances(usersBalances, &userIds, writer, delta)
+		usersBalances, ok := (*combiner.GroupedStatByStampId)[stampId]
+		if !ok {
+			continue
 		}
+		UpdateBalances(usersBalances, &userIds, writer, delta)
 	}
 }

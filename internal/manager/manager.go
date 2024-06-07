@@ -87,7 +87,7 @@ func GetNextStamp(left, delta int, data []*models.UserData, timeStampCount int) 
 	return r + 1
 }
 
-func (manager *Manager) Run(delta, timeStampCount int, combiner Combiner) {
+func (manager *Manager) Run(delta, timeStampCount, maxGoroutines int, combiner Combiner) {
 	wg := &WaitGroupCount{}
 	wgCombine := &sync.WaitGroup{}
 	pointer := 0
@@ -99,7 +99,7 @@ func (manager *Manager) Run(delta, timeStampCount int, combiner Combiner) {
 	shiftTime := manager.Data[0].Timestamp
 	manager.Converter.Update(manager.Data[0].Timestamp - 1)
 	for pointer < len(manager.Data) {
-		for wg.GetCount() == 20 {
+		for wg.GetCount() == maxGoroutines {
 		}
 		right := GetNextStamp(pointer, delta, manager.Data, timeStampCount)
 		wg.Add(1)
