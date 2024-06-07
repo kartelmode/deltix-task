@@ -12,6 +12,7 @@ type Writer interface {
 
 type Combiner struct {
 	GroupedStatByStampId *map[int]*map[string]*models.Balance
+	Mutex                *sync.Mutex
 }
 
 var currentUserBalance []float64
@@ -26,18 +27,18 @@ func MakeCombiner() *Combiner {
 	combiner := &Combiner{}
 	combiner.GroupedStatByStampId = new(map[int]*map[string]*models.Balance)
 	*combiner.GroupedStatByStampId = make(map[int]*map[string]*models.Balance)
+	combiner.Mutex = new(sync.Mutex)
 	return combiner
 }
 
-func (combiner Combiner) StartListen(stampChan chan []*models.GroupedBalance) {
-	for {
-		stamps := <-stampChan
-		for _, stamp := range stamps {
-			// fmt.Println(stamp)
-			stampId := stamp.Id
-			(*combiner.GroupedStatByStampId)[stampId] = stamp.Balances
-		}
+func (combiner Combiner) AddBalances(stamps []*models.GroupedBalance, wg *sync.WaitGroup) {
+	defer wg.Done()
+	combiner.Mutex.Lock()
+	for _, stamp := range stamps {
+		stampId := stamp.Id
+		(*combiner.GroupedStatByStampId)[stampId] = stamp.Balances
 	}
+	combiner.Mutex.Unlock()
 }
 
 func GetStartTimeStamp(time, delta int) int {

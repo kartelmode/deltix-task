@@ -21,7 +21,7 @@ func main() {
 	combiner := combiner.MakeCombiner()
 	writer := writer.MakeWriter()
 	writer.CreateCsvIfNotExist("output.csv")
-	manager.Run(3600, 2, combiner)
+	manager.Run(3600, 200, combiner)
 	combiner.Combine(writer, 3600)
 	writer.CloseFile()
 	fmt.Println("Done")

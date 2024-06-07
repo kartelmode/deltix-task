@@ -1,6 +1,8 @@
 package manager
 
 import (
+	"sync"
+
 	"github.com/kartelmode/deltix-task/internal/models"
 	"github.com/kartelmode/deltix-task/internal/pools"
 )
@@ -12,7 +14,7 @@ type Pricing interface {
 }
 
 type Combiner interface {
-	StartListen(chan []*models.GroupedBalance)
+	AddBalances([]*models.GroupedBalance, *sync.WaitGroup)
 }
 
 type Manager struct {
@@ -36,10 +38,11 @@ func GetStampId(row *models.UserData, delta int) int {
 
 func Calculate(left, right int,
 	wg *WaitGroupCount,
+	wgCombine *sync.WaitGroup,
 	userData []*models.UserData,
 	pricing Pricing,
 	timeStampCount, delta int,
-	stampChan chan []*models.GroupedBalance,
+	combiner Combiner,
 	shiftTimeStampId, shiftTime int) {
 	defer wg.Done()
 	balances := make([]*models.GroupedBalance, timeStampCount)
@@ -65,7 +68,8 @@ func Calculate(left, right int,
 		stampBalances.UpdateLastAll((timeStampId+1)*delta - 1 + shiftTime)
 	}
 
-	stampChan <- balances
+	wgCombine.Add(1)
+	go combiner.AddBalances(balances, wgCombine)
 }
 
 func GetNextStamp(left, delta int, data []*models.UserData, timeStampCount int) int {
@@ -85,10 +89,11 @@ func GetNextStamp(left, delta int, data []*models.UserData, timeStampCount int) 
 
 func (manager *Manager) Run(delta, timeStampCount int, combiner Combiner) {
 	wg := &WaitGroupCount{}
+	wgCombine := &sync.WaitGroup{}
 	pointer := 0
 
 	stampChan := make(chan []*models.GroupedBalance)
-	go combiner.StartListen(stampChan)
+	defer close(stampChan)
 
 	shiftStampId := GetStampId(manager.Data[0], delta)
 	shiftTime := manager.Data[0].Timestamp
@@ -100,7 +105,7 @@ func (manager *Manager) Run(delta, timeStampCount int, combiner Combiner) {
 		wg.Add(1)
 		restPricing := manager.Converter.CopyRestPricing()
 
-		go Calculate(pointer, right, wg, manager.Data, restPricing, timeStampCount, delta, stampChan, shiftStampId, shiftTime)
+		go Calculate(pointer, right, wg, wgCombine, manager.Data, restPricing, timeStampCount, delta, combiner, shiftStampId, shiftTime)
 
 		pointer = right
 		if pointer < len(manager.Data) {
@@ -109,4 +114,5 @@ func (manager *Manager) Run(delta, timeStampCount int, combiner Combiner) {
 	}
 
 	wg.Wait()
+	wgCombine.Wait()
 }
