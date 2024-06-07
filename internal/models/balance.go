@@ -5,10 +5,10 @@ type Balance struct {
 	Min        float64
 	Max        float64
 	Sum        float64
-	LastUpdate int
+	LastUpdate int64
 }
 
-func MakeBalance(startTime int) *Balance {
+func MakeBalance(startTime int64) *Balance {
 	return &Balance{
 		Current:    0,
 		Min:        0,
@@ -18,7 +18,7 @@ func MakeBalance(startTime int) *Balance {
 	}
 }
 
-func (balance *Balance) Update(value float64, time int) {
+func (balance *Balance) Update(value float64, time int64) {
 	balance.Sum += balance.Current * float64(time-balance.LastUpdate)
 	balance.Current += value
 	balance.Min = min(balance.Min, balance.Current)
@@ -26,6 +26,6 @@ func (balance *Balance) Update(value float64, time int) {
 	balance.LastUpdate = time
 }
 
-func (balance *Balance) UpdateLast(delta int) {
+func (balance *Balance) UpdateLast(delta int64) {
 	balance.Sum += balance.Current * float64(delta-balance.LastUpdate)
 }

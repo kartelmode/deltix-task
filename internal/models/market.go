@@ -2,11 +2,11 @@ package models
 
 type Market struct {
 	Currency  string  `csv:"symbol"`
-	Timestamp int     `csv:"timestamp"`
+	Timestamp int64   `csv:"timestamp"`
 	Price     float64 `csv:"price"`
 }
 
-func (market Market) GetTime() int {
+func (market Market) GetTime() int64 {
 	return market.Timestamp
 }
 

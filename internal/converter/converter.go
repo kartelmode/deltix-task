@@ -39,7 +39,7 @@ func (pricing Pricing) ChangePrice(currency string, price float64) {
 	pricing.Currencies[currency] = price
 }
 
-func (pricing Pricing) Update(time int) {
+func (pricing Pricing) Update(time int64) {
 	for pricing.Pointer < len(pricing.Market) && pricing.Market[pricing.Pointer].Timestamp <= time {
 		curMarket := pricing.Market[pricing.Pointer]
 		pricing.ChangePrice(curMarket.Currency, curMarket.Price)

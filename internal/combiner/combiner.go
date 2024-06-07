@@ -7,7 +7,7 @@ import (
 )
 
 type Writer interface {
-	Write(string, float64, float64, float64, int)
+	Write(string, float64, float64, float64, int64)
 }
 
 type Combiner struct {
@@ -36,16 +36,16 @@ func (combiner Combiner) AddBalances(stamps []*models.GroupedBalance, wg *sync.W
 	combiner.Mutex.Lock()
 	for _, stamp := range stamps {
 		stampId := stamp.Id
-		(*combiner.GroupedStatByStampId)[stampId] = stamp.Balances
+		(*combiner.GroupedStatByStampId)[int(stampId)] = stamp.Balances
 	}
 	combiner.Mutex.Unlock()
 }
 
-func GetStartTimeStamp(time, delta int) int {
+func GetStartTimeStamp(time, delta int64) int64 {
 	return (time / delta) * delta
 }
 
-func UpdateBalance(userId string, id int, balance *models.Balance, wg *sync.WaitGroup, writer Writer, delta int) {
+func UpdateBalance(userId string, id int, balance *models.Balance, wg *sync.WaitGroup, writer Writer, delta int64) {
 	defer wg.Done()
 
 	currentBalance := currentUserBalance[id]
@@ -56,7 +56,7 @@ func UpdateBalance(userId string, id int, balance *models.Balance, wg *sync.Wait
 	currentUserBalance[id] += balance.Current
 }
 
-func UpdateBalances(usersBalances *map[string]*models.Balance, userIds *map[string]int, writer Writer, delta int) {
+func UpdateBalances(usersBalances *map[string]*models.Balance, userIds *map[string]int, writer Writer, delta int64) {
 	var wg sync.WaitGroup
 	for userId, balance := range *usersBalances {
 		wg.Add(1)
@@ -66,11 +66,11 @@ func UpdateBalances(usersBalances *map[string]*models.Balance, userIds *map[stri
 	wg.Wait()
 }
 
-func (combiner *Combiner) Combine(writer Writer, delta int) {
+func (combiner *Combiner) Combine(writer Writer, delta int64) {
 	userIds := map[string]int{}
 	maxTimeStamp := 0
 	for stampId, users := range *combiner.GroupedStatByStampId {
-		maxTimeStamp = max(maxTimeStamp, stampId)
+		maxTimeStamp = max(maxTimeStamp, int(stampId))
 		for userId := range *users {
 			_, ok := userIds[userId]
 			if !ok {

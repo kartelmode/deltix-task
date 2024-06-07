@@ -8,7 +8,7 @@ import (
 )
 
 type Pricing interface {
-	Update(int)
+	Update(int64)
 	ConvertToUSD(string, float64) float64
 	CopyRestPricing() Pricing
 }
@@ -22,7 +22,7 @@ type Manager struct {
 	Data      []*models.UserData
 }
 
-var shift int = 0
+var shift int64 = 0
 
 func MakeManager(converter Pricing, data []*models.UserData) *Manager {
 	shift = data[0].Timestamp
@@ -32,7 +32,7 @@ func MakeManager(converter Pricing, data []*models.UserData) *Manager {
 	}
 }
 
-func GetStampId(row *models.UserData, delta int) int {
+func GetStampId(row *models.UserData, delta int64) int64 {
 	return (row.Timestamp - shift) / delta
 }
 
@@ -43,18 +43,18 @@ func Calculate(left, right int,
 	pricing Pricing,
 	timeStampCount, delta int,
 	combiner Combiner,
-	shiftTimeStampId, shiftTime int) {
+	shiftTimeStampId, shiftTime int64) {
 	defer wg.Done()
 	balances := make([]*models.GroupedBalance, timeStampCount)
-	startTimeStamp := GetStampId(userData[left], delta)
+	startTimeStamp := GetStampId(userData[left], int64(delta))
 	for i := 0; i < timeStampCount; i++ {
 		balances[i] = models.MakeNewGroupBalance(pools.GetNewBalance())
-		balances[i].SetId(i + startTimeStamp - shiftTimeStampId)
+		balances[i].SetId(int64(i) + startTimeStamp - shiftTimeStampId)
 	}
 
 	for id := left; id < right; id++ {
 		row := userData[id]
-		timeStampId := GetStampId(row, delta) - startTimeStamp
+		timeStampId := GetStampId(row, int64(delta)) - startTimeStamp
 		ok := balances[timeStampId].GetBalance(row.UserId)
 		if !ok {
 			balances[timeStampId].SetBalance(row.UserId, userData[left].Timestamp)
@@ -64,8 +64,8 @@ func Calculate(left, right int,
 	}
 
 	for id, stampBalances := range balances {
-		timeStampId := id + startTimeStamp - shiftTimeStampId
-		stampBalances.UpdateLastAll((timeStampId+1)*delta - 1 + shiftTime)
+		timeStampId := int64(id) + startTimeStamp - shiftTimeStampId
+		stampBalances.UpdateLastAll((timeStampId+1)*int64(delta) - 1 + shiftTime)
 	}
 
 	wgCombine.Add(1)
@@ -78,7 +78,7 @@ func GetNextStamp(left, delta int, data []*models.UserData, timeStampCount int) 
 	var mid int = 0
 	for l < r {
 		mid = (l + r + 1) / 2
-		if GetStampId(data[mid], delta) > GetStampId(data[left], delta)+timeStampCount-1 {
+		if GetStampId(data[mid], int64(delta)) > GetStampId(data[left], int64(delta))+int64(timeStampCount)-1 {
 			r = mid - 1
 		} else {
 			l = mid
@@ -95,7 +95,7 @@ func (manager *Manager) Run(delta, timeStampCount int, combiner Combiner) {
 	stampChan := make(chan []*models.GroupedBalance)
 	defer close(stampChan)
 
-	shiftStampId := GetStampId(manager.Data[0], delta)
+	shiftStampId := GetStampId(manager.Data[0], int64(delta))
 	shiftTime := manager.Data[0].Timestamp
 	manager.Converter.Update(manager.Data[0].Timestamp - 1)
 	for pointer < len(manager.Data) {

@@ -35,11 +35,11 @@ func ConvertFloatToString(value float64) []byte {
 	return []byte(strconv.FormatFloat(value, 'f', 4, 64))
 }
 
-func ConvertIntToString(value int) []byte {
-	return []byte(strconv.Itoa(value))
+func ConvertIntToString(value int64) []byte {
+	return []byte(strconv.FormatInt(value, 10))
 }
 
-func (writer Writer) Write(a string, b float64, c float64, d float64, e int) {
+func (writer Writer) Write(a string, b float64, c float64, d float64, e int64) {
 	writer.Mutex.Lock()
 	writer.File.Write([]byte(a))
 	writer.File.Write([]byte{','})
